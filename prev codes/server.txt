@@ -1,0 +1,113 @@
+// socket.js
+const Message = require('../models/Message');
+const User = require('../models/User');
+
+const connectedUsers = new Map();
+
+function initializeSockets(io) {
+    io.on('connection', async (socket) => {
+        console.log('New client connected');
+
+        socket.on('join chat', async ({ userId }) => {
+            try {
+                connectedUsers.set(userId, {
+                    socketId: socket.id,
+                    online: true
+                });
+
+                const users = await User.find({}, 'username _id');
+                const usersList = users.map(user => ({
+                    userId: user._id.toString(),
+                    username: user.username,
+                    online: connectedUsers.has(user._id.toString())
+                }));
+
+                // Emit to everyone EXCEPT the newly connected user
+                socket.broadcast.emit('users update', usersList); 
+
+                // Send the updated user list to the newly connected user
+                socket.emit('users update', usersList);
+            } catch (error) {
+                console.error('Error in join chat:', error);
+            }
+        });
+
+        socket.on('chat message', async (data) => {
+          try {
+              if (data.isEditing) {
+                  // Handle message editing
+                  const updatedMessage = await Message.findByIdAndUpdate(
+                      data.messageId, 
+                      { message: data.message, isEdited: true },
+                      { new: true } // Return the updated document
+                  );
+      
+                  const messageData = {
+                      ...data,
+                      _id: updatedMessage._id,
+                      message: updatedMessage.message, 
+                      timestamp: updatedMessage.timestamp,
+                      isEdited: true, 
+                  };
+      
+                  const room = [data.from, data.to].sort().join('-');
+                  io.to(room).emit('message update', messageData); // Use a different event for updates
+      
+              } else {
+                  // Handle new messages
+                  const newMessage = new Message({
+                      from: data.from,
+                      to: data.to,
+                      message: data.message
+                  });
+      
+                  const savedMessage = await newMessage.save();
+      
+                  const messageData = {
+                      ...data,
+                      _id: savedMessage._id,
+                      timestamp: savedMessage.timestamp,
+                      isEdited: false
+                  };
+      
+                  const room = [data.from, data.to].sort().join('-');
+                  io.to(room).emit('chat message', messageData);
+              }
+      
+          } catch (error) {
+              console.error('Error saving/updating message:', error);
+              socket.emit('message error', { error: 'Failed to save/update message' });
+          }
+      });
+      
+
+        socket.on('disconnect', async () => {
+            try {
+                let disconnectedUserId = null;
+                for (const [userId, data] of connectedUsers.entries()) {
+                    if (data.socketId === socket.id) {
+                        disconnectedUserId = userId;
+                        break;
+                    }
+                }
+
+                if (disconnectedUserId) {
+                    connectedUsers.delete(disconnectedUserId);
+                    
+                    const users = await User.find({}, 'username _id');
+                    const usersList = users.map(user => ({
+                        userId: user._id.toString(),
+                        username: user.username,
+                        online: connectedUsers.has(user._id.toString())
+                    }));
+
+                    io.emit('users update', usersList); 
+                }
+            } catch (error) {
+                console.error('Error in disconnect:', error);
+            }
+        });
+    });
+}
+
+module.exports = initializeSockets;

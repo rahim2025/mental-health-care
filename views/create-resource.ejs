@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+        }
+        label {
+            margin-top: 10px;
+        }
+        textarea, input[type="url"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create New Resource</h1>
+    <% if (error) { %>
+        <div class="error"><%= error %></div>
+    <% } %>
+    <form action="/api/v1//admin/resource/create" method="POST">
+        <label for="resourceContext">Resource Context:</label>
+        <textarea name="resourceContext" required></textarea>
+        <label for="resourceUrl">Resource URL:</label>
+        <input type="url" name="resourceUrl" required>
+        <button type="submit">Create Resource</button>
+    </form>
+</body>
+</html>

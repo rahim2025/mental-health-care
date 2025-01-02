@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .error {
+            color: red;
+            margin-bottom: 20px;
+        }
+        .resources {
+            margin-top: 20px;
+        }
+        .resource {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .resource p {
+            margin: 0;
+        }
+        .resource a {
+            display: block;
+            margin-top: 5px;
+        }
+        .resource small {
+            display: block;
+            margin-top: 5px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Resources</h1>
+    <% if (error) { %>
+        <div class="error"><%= error %></div>
+    <% } %>
+    <a href="/api/v1/admin/resource/create">Create New Resource</a>
+    <div class="resources">
+        <% resources.forEach(resource => { %>
+            <div class="resource">
+                <p><%= resource.resourceContext %></p>
+                <a href="<%= resource.resourceUrl %>"><%= resource.resourceUrl %></a>
+                <a href="/api/v1/admin/resource/<%= resource._id %>/edit">Edit</a>
+            </div>
+        <% }) %>
+    </div>
+</body>
+</html>

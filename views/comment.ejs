@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Comments for <%= post.title %></title>
+</head>
+<body>
+    <h1>Comments for <%= post.title %></h1>
+    <% if (comments.length > 0) { %>
+        <% comments.forEach(comment => { %>
+            <div>
+                <p><%= comment.text %></p>
+                <p>By: <%= comment.authorId.name %> (<%= comment.authorId.email %>)</p>
+                <% if (currentUser && currentUser._id.toString() === comment.authorId._id.toString()) { %>
+                    <form action="/post/<%= post._id %>/comment/<%= comment._id %>/edit" method="POST">
+                        <textarea name="text"><%= comment.text %></textarea>
+                        <button type="submit">Update</button>
+                    </form>
+                    <form action="/post/<%= post._id %>/comment/<%= comment._id %>/delete" method="POST">
+                        <button type="submit">Delete</button>
+                    </form>
+                <% } %>
+            </div>
+        <% }) %>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        div {
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        p {
+            margin: 5px 0;
+        }
+        form {
+            margin-top: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <% } else { %>
+        <p>No comments available.</p>
+    <% } %>
+</body>
+</html>

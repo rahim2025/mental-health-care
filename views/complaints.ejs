@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Complaints</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .complaint-list {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .complaint-list th, .complaint-list td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    .complaint-list th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .complaint-list tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    .complaint-count {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Admin - All Complaints</h1>
+
+    <% if (complaints.length === 0) { %>
+      <p>No complaints found.</p>
+    <% } else { %>
+      <table class="complaint-list">
+        <thead>
+          <tr>
+            <th>Complaint ID</th>
+            <th>Complaint Text</th>
+            <th>Complainer ID</th>
+            <th>Source</th>
+            <th>Complainee ID</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% complaints.forEach(complaint => { %>
+            <tr>
+              <td><%= complaint._id %></td>
+              <td><%= complaint.complaintText %></td>
+              <td><%= complaint.complainerId %></td>
+              <td><%= complaint.source %></td>
+              <td><%= complaint.complaineeId %></td>
+              <td><button>View Details</button></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+
+    <div class="complaint-count">
+      <p>Total Complaints: <%= count %></p>
+    </div>
+  </div>
+
+</body>
+</html>

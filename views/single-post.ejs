@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+</head>
+<body>
+    <h1>Post Details</h1>
+    <% if (error) { %>
+        <div class="error"><%= error %></div>
+    <% } %>
+    <div class="post">
+        <p><%= post.text %></p>
+        <small>By: <%= post.user.name %></small>
+    </div>
+    <h2>Comments</h2>
+    <form action="/comment/create" method="POST">
+        <input type="hidden" name="postId" value="<%= post._id %>">
+        <textarea name="text" required></textarea>
+        <button type="submit">Add Comment</button>
+    </form>
+    <div class="comments">
+        <% comments.forEach(comment => { %>
+            <div class="comment">
+                <p><%= comment.text %></p>
+                <small>By: <%= comment.user.name %></small>
+            </div>
+        <% }) %>
+    </div>
+</body>
+</html>

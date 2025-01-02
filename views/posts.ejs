@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .posts {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .post {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .comments {
+            margin-top: 20px;
+        }
+        .comment {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .comment-form {
+            margin-top: 20px;
+        }
+        .comment-form textarea {
+            width: 100%;
+            height: 60px;
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Posts</h1>
+    <a href="/api/v1/post/create">Create New Post</a>
+    <div class="posts">
+        <% if (posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <div class="post">
+                    <h2><%= post.title %></h2>
+                    <p><%= post.content %></p>
+                    <p>By: <%= post.authorId.name %> (<%= post.authorId.email %>)</p>
+                    <% if (currentUser && currentUser._id.toString() === post.authorId._id.toString()) { %>
+                        <form action="/api/v1/post/<%= post._id %>/update?_method=PUT" method="POST"></form>
+                            <textarea name="text"><%= post.text %></textarea>
+                            <button type="submit">Update</button>
+                        </form>
+                        <form action="/api/v1/post/<%= post._id %>/delete?_method=DELETE" method="POST">
+                            <button type="submit">Delete</button>
+                        </form>
+                    <% } %>
+
+                    <!-- Add Comments Section -->
+                    <div class="comments">
+                        <h3>Comments</h3>
+                        <!-- Comment Form -->
+                        <form class="comment-form" action="/api/v1/comment/create" method="POST">
+                            <input type="hidden" name="postId" value="<%= post._id %>">
+                            <textarea name="text" placeholder="Write a comment..." required></textarea>
+                            <button type="submit">Add Comment</button>
+                        </form>
+
+                        <!-- Display Comments -->
+                        <% if (post.comments && post.comments.length > 0) { %>
+                            <% post.comments.forEach(comment => { %>
+                                <div class="comment">
+                                    <p><%= comment.text %></p>
+                                    <small>By: <%= comment.authorId.name %> (<%= comment.authorId.email %>)</small>
+                                    
+                                    <% if (currentUser && currentUser._id.toString() === comment.authorId._id.toString()) { %>
+                                        <form action="/api/v1/post/<%= post._id %>/comment/<%= comment._id %>/edit?_method=PUT" method="POST">
+                                            <textarea name="text"><%= comment.text %></textarea>
+                                            <button type="submit">Update Comment</button>
+                                        </form>
+                                        <form action="/api/v1/post/<%= post._id %>/comment/<%= comment._id %>/delete?_method=DELETE" method="POST">
+                                            <button type="submit">Delete Comment</button>
+                                        </form>
+                                    <% } %>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p>No comments yet.</p>
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p>No posts available.</p>
+        <% } %>
+    </div>
+</body>
+</html>

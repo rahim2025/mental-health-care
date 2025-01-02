@@ -1,0 +1,83 @@
+// routes/chat.js
+const express = require('express');
+const router = express.Router();
+const Message = require('../models/Message');
+const { checkAuth } = require('../middleware/auth');
+
+// Get chat history
+router.get('/history/:userId', checkAuth, async (req, res) => {
+    try {
+        const messages = await Message.find({
+            $or: [
+                { from: req.user._id, to: req.params.userId },
+                { from: req.params.userId, to: req.user._id }
+            ]
+        })
+        .sort({ timestamp: 1 });
+
+        res.json(messages);
+    } catch (error) {
+        console.error('Error fetching chat history:', error);
+        res.status(500).json({ error: 'Failed to load chat history' });
+    }
+});
+
+// Update message
+router.put('/message/:messageId', checkAuth, async (req, res) => {
+    try {
+        const message = await Message.findById(req.params.messageId);
+        
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+        
+        if (message.from.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: 'Not authorized to edit this message' });
+        }
+
+        message.message = req.body.message;
+        message.isEdited = true;
+        await message.save();
+
+        const io = req.app.get('io');
+        io.emit('message update', {
+            messageId: message._id,
+            newMessage: message.message,
+            isEdited: true
+        });
+
+        res.json(message);
+    } catch (error) {
+        console.error('Error updating message:', error);
+        res.status(500).json({ error: 'Failed to update message' });
+    }
+});
+
+// Delete message
+router.delete('/message/:messageId', checkAuth, async (req, res) => {
+    try {
+        const message = await Message.findById(req.params.messageId);
+        
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+        
+        if (message.from.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: 'Not authorized to delete this message' });
+        }
+
+        await message.deleteOne();
+
+        const io = req.app.get('io');
+        io.emit('message delete', {
+            messageId: message._id
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        res.status(500).json({ error: 'Failed to delete message' });
+    }
+});
+
+module.exports = router;

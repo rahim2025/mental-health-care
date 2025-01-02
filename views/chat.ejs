@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="h-screen bg-gray-100">
+    <div class="container mx-auto h-full">
+        <div class="flex h-full min-h-screen">
+            <!-- Users List Sidebar -->
+            <div class="w-1/4 bg-white border-r">
+                <div class="p-4 bg-gray-800 text-white flex justify-between items-center"> 
+                    <h2 class="text-xl font-bold">Users</h2>
+                    <a href="/" class="text-white hover:underline">Home</a> 
+                </div>
+                <div id="usersList" class="overflow-y-auto h-[calc(100vh-4rem)]">
+                    <!-- Users will be populated here -->
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="w-3/4 flex flex-col">
+                <div id="chatHeader" class="p-4 bg-gray-800 text-white flex justify-between items-center">
+                    <h2 class="text-xl font-bold">Chat with <span id="selectedUserName"></span></h2>
+                </div>
+                
+                <!-- Messages Container -->
+                <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 bg-gray-50">
+                    <div id="messages" class="space-y-4">
+                        <!-- Messages will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="p-4 bg-white border-t">
+                    <form id="messageForm" class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Type your message..."
+                        >
+                        <button 
+                            type="submit"
+                            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                            Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const currentUser = '<%= user._id %>'; // Get current user's ID from server
+        let selectedUser = null;
+        let users = {};
+
+        // Load chat history when the page loads
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('user');
+
+            if (userId) {
+                selectUser(userId);
+            }
+        });
+
+        // Socket event listeners
+        socket.on('chat message', (data) => {
+            console.log("Message Received:", data);
+            if (
+                (data.from === currentUser && data.to === selectedUser) ||
+                (data.from === selectedUser && data.to === currentUser)
+            ) {
+                appendMessage(data, false);
+            }
+        });
+
+        socket.on('users update', (updatedUsers) => {
+            users = updatedUsers;
+            updateUsersList();
+        });
+
+        socket.on('message update', (data) => {
+            const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+            if (messageElement) {
+                const messageText = messageElement.querySelector('.message-text');
+                messageText.textContent = data.newMessage;
+                if (data.isEdited && !messageElement.querySelector('.edited-tag')) {
+                    const editedTag = document.createElement('span');
+                    editedTag.className = 'edited-tag text-xs opacity-70';
+                    editedTag.textContent = '(edited)';
+                    messageText.parentNode.appendChild(editedTag);
+                }
+            }
+        });
+
+        socket.on('message delete', (data) => {
+            const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+            if (messageElement) {
+                messageElement.remove();
+            }
+        });
+
+        // Join chat when connected
+        socket.emit('join chat', { userId: currentUser });
+
+        function updateChatHeader() {
+            const selectedUserNameSpan = document.getElementById('selectedUserName');
+            selectedUserNameSpan.textContent = selectedUserName; 
+        }
+
+        // Update users list in UI
+        function updateUsersList() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '';
+
+            Object.values(users).forEach(user => {
+                if (user.userId !== currentUser) {
+                    const userElement = document.createElement('div');
+                    userElement.className = `p-4 border-b hover:bg-gray-50 cursor-pointer ${selectedUser === user.userId ? 'bg-blue-50' : ''}`; 
+                    userElement.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full ${user.online ? 'bg-green-500' : 'bg-gray-300'}"></div>
+                            <span>${user.username}</span>
+                        </div>`; 
+
+                    userElement.onclick = () => selectUser(user.userId);
+                    usersList.appendChild(userElement);
+                }
+            });
+        }
+
+        // Select user and load chat history
+        async function selectUser(userId) {
+            selectedUser = userId;
+
+            const selectedUserData = users.find(user => user.userId === userId);
+            selectedUserName = selectedUserData ? selectedUserData.username : 'Unknown User';
+            updateChatHeader();
+
+            updateUsersList();
+
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('user', userId);
+            window.history.pushState({}, '', newUrl);
+
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.innerHTML = '';
+            await loadChatHistory(userId);
+        }
+
+        async function loadChatHistory(userId) {
+            try {
+                const response = await fetch(`/api/chat/history/${userId}`); 
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch chat history: ${response.statusText}`);
+                }
+
+                const messages = await response.json();
+                messages.forEach(message => {
+                    appendMessage(message);
+                });
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+                const messagesContainer = document.getElementById('messages');
+                messagesContainer.innerHTML = `<div class="error-message">Error loading chat history. Please try again later.</div>`; 
+            }
+        }
+
+        // Append message to chat window
+        function appendMessage(data, isNewMessage = true) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            const isOwnMessage = data.from === currentUser;
+
+            messageDiv.setAttribute('data-message-id', data._id || 'temp'); 
+            messageDiv.className = `message-container flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-2`; 
+
+            messageDiv.innerHTML = `
+                <div class="max-w-[70%] relative p-3 rounded-lg ${isOwnMessage ? 'bg-blue-500 text-white' : 'bg-gray-200'}">
+                    <span class="message-text">${data.message}</span>
+                    ${data.isEdited ? '<span class="edited-tag text-xs opacity-70">(edited)</span>' : ''}
+                    ${isOwnMessage ? `
+                        <div class="message-actions mt-2 flex gap-2">
+                            <a href="#" onclick="editMessage('${data._id || 'temp'}')" class="text-white hover:underline">Edit</a>
+                            <a href="#" onclick="deleteMessage('${data._id || 'temp'}')" class="text-red-500 hover:underline">Delete</a>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            if (isNewMessage) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+
+        function editMessage(messageId) {
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageElement) {
+                console.error('Message element not found for editing:', messageId);
+                return;
+            }
+
+            const messageText = messageElement.querySelector('.message-text');
+            const currentText = messageText.textContent;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'border rounded px-2 py-1 text-black w-full';
+
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Save';
+            saveButton.className = 'ml-2 px-3 py-1 bg-green-500 text-white rounded text-sm';
+
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = 'Cancel';
+            cancelButton.className = 'ml-2 px-3 py-1 bg-gray-500 text-white rounded text-sm';
+
+            const editContainer = document.createElement('div');
+            editContainer.className = 'flex items-center';
+            editContainer.appendChild(input);
+            editContainer.appendChild(saveButton);
+            editContainer.appendChild(cancelButton);
+
+            messageText.replaceWith(editContainer);
+            input.focus();
+
+            saveButton.onclick = async () => {
+                const newMessage = input.value.trim();
+                if (newMessage && newMessage !== currentText) {
+                    try {
+                        const response = await fetch(`/api/chat/message/${messageId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ message: newMessage })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to update message');
+                        }
+
+                        socket.emit('message update', { messageId, newMessage, isEdited: true });
+
+                        messageText.textContent = newMessage;
+                        editContainer.replaceWith(messageText);
+                    } catch (error) {
+                        console.error('Error updating message:', error);
+                        alert('Failed to update the message.');
+                    }
+                } else {
+                    editContainer.replaceWith(messageText);
+                }
+            };
+
+            cancelButton.onclick = () => {
+                editContainer.replaceWith(messageText);
+            };
+        }
+
+        async function deleteMessage(messageId) {
+            if (confirm('Are you sure you want to delete this message?')) {
+                try {
+                    const response = await fetch(`/api/chat/message/${messageId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to delete message: ${response.statusText}`);
+                    }
+
+                    socket.emit('message delete', { messageId });
+
+                    // Instantly remove the message from the UI
+                    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                    if (messageElement) {
+                        messageElement.remove();
+                    }
+                } catch (error) {
+                    console.error('Error deleting message:', error);
+                    alert('Failed to delete the message.');
+                }
+            }
+        }
+
+        function updateChatHeader() {
+            const chatHeader = document.getElementById('chatHeader');
+            chatHeader.innerHTML = `
+                <h2 class="text-xl font-bold">Chat with ${selectedUserName}</h2>
+            `; 
+        }
+
+        // Message form submission
+        document.getElementById('messageForm').onsubmit = async function (e) {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (message && selectedUser) {
+                const messageData = {
+                    from: currentUser,
+                    to: selectedUser,
+                    message: message
+                };
+
+                input.value = '';
+                try {
+                    // Append the message to UI immediately 
+                    appendMessage(messageData, true); 
+
+                    // Then send to server (and handle potential updates)
+                    socket.emit('chat message', messageData, (response) => {
+                        console.log("Message saved:", response);
+
+                        // Update the message element with the real _id
+                        const messageElement = document.querySelector(`[data-message-id="temp"]`);
+                        if (messageElement) {
+                            messageElement.setAttribute('data-message-id', response._id);
+
+                            // Update the edit/delete links with the correct messageId
+                            const editLink = messageElement.querySelector('.message-actions a:first-child');
+                            const deleteLink = messageElement.querySelector('.message-actions a:last-child');
+                            if (editLink) {
+                                editLink.setAttribute('onclick', `editMessage('${response._id}')`);
+                            }
+                            if (deleteLink) {
+                                deleteLink.setAttribute('onclick', `deleteMessage('${response._id}')`);
+                            }
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    alert('Failed to send the message. Please try again.');
+                    input.value = message;
+                }
+            }
+        };
+    </script>
+</body>
+</html>
+  

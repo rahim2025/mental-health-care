@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Complaint</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #444;
+      margin-bottom: 20px;
+    }
+    .error {
+      color: #d9534f;
+      text-align: center;
+      font-size: 1.1em;
+      margin-bottom: 15px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      resize: vertical;
+    }
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+    button {
+      display: inline-block;
+      width: 100%;
+      background-color: #007bff;
+      color: #fff;
+      font-size: 1em;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    button:active {
+      background-color: #003f7f;
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Submit a Complaint</h1>
+
+    <!-- Display user status -->
+      <form id="complaintForm">
+        <div class="form-group">
+          <label for="sourceType">Source Type:</label>
+          <select id="sourceType" name="sourceType" required>
+            <option value="" disabled selected>Select Source</option>
+            <option value="post">Post</option>
+            <option value="comment">Comment</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sourceId">Source ID (Post/Comment ID):</label>
+          <input type="text" id="sourceId" name="sourceId" placeholder="Enter Post or Comment ID" required>
+        </div>
+
+        <div class="form-group">
+          <label for="complaintText">Complaint Text:</label>
+          <textarea id="complaintText" name="complaintText" rows="4" placeholder="Write your complaint here..." required></textarea>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="submitComplaint()">Submit Complaint</button>
+      </form>
+
+  </div>
+
+  <script>
+    function submitComplaint() {
+      const sourceType = document.getElementById('sourceType').value;
+      const sourceId = document.getElementById('sourceId').value;
+      const complaintText = document.getElementById('complaintText').value;
+
+      if (!sourceType || !sourceId || !complaintText) {
+        alert('All fields are required.');
+        return;
+      }
+
+      const queryParam = sourceType === 'post' ? `postId=${sourceId}` : `commentId=${sourceId}`;
+      const formData = { complaintText };
+
+      fetch(`/api/v1/complaint/submit?${queryParam}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.message === 'success') {
+            alert('Complaint submitted successfully.');
+          } else {
+            alert(`Error: ${data.message}`);
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          alert('An error occurred while submitting the complaint.');
+        });
+    }
+  </script>
+</body>
+</html>

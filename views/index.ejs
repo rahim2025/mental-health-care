@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mental Health Support</title>
+  <script src='/js/socket.io.js' defer></script>
+  <script src='/js/main.js' defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Background image */
+    body {
+      background: url('images/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      filter: brightness(70%);
+      font-family: 'Arial', sans-serif;
+      color: #000;
+    }
+
+    /* Navbar styling */
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(5px);
+    }
+
+    .navbar-brand {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .nav-link {
+      color: #fff !important;
+      font-size: 0.9rem;
+    }
+
+    .nav-link:hover {
+      background-color: #1a73e8;
+      border-radius: 5px;
+    }
+
+    .dropdown-menu {
+      background-color: #000;
+      border: none;
+    }
+
+    .dropdown-item {
+      color: #fff;
+    }
+
+    .dropdown-item:hover {
+      background-color: #1a73e8;
+      color: #fff;
+    }
+
+    /* Hero Section */
+    .hero {
+      display: flex;
+      justify-content: center;
+      align-items: center; 
+      height: 80vh;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #000 !important;
+    }
+
+    /* Auth buttons styling */
+    .auth-buttons .nav-link {
+      margin-left: 10px;
+      padding: 8px 15px;
+      border-radius: 5px;
+    }
+
+    .auth-buttons .nav-link.login {
+      background-color: transparent;
+      border: 1px solid #fff;
+    }
+
+    .auth-buttons .nav-link.register {
+      background-color: #1a73e8;
+    }
+
+    .auth-buttons .nav-link.logout {
+      background-color: #dc3545;
+      color: white !important;
+      padding: 8px 15px;
+      border-radius: 5px;
+    }
+
+    .auth-buttons .nav-link.logout:hover {
+      background-color: #c82333;
+    }
+
+    .welcome-text {
+      color: #fff !important;
+      margin-right: 15px;
+      padding: 8px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Mental Health Support</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+        aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="/chat">Chat Support</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Listeners</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Community</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="premiumDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">Premium</a>
+            <ul class="dropdown-menu" aria-labelledby="premiumDropdown">
+              <li><a class="dropdown-item" href="/phone-support">Phone Support</a></li>
+              <li><a class="dropdown-item" href="/premium-packs">Go to Premium</a></li>
+              <li><a class="dropdown-item" href="/sessions/add">Add Session Note</a></li>
+              <li><a class="dropdown-item" href="#">Session reminders</a></li>
+              <li><a class="dropdown-item" href="#">Bill PDF</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="premiumDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">Complain</a>
+            <ul class="dropdown-menu" aria-labelledby="premiumDropdown">
+              <li><a class="dropdown-item" href="/api/v1//complaint/submit">Submit a complain</a></li>
+              <li><a class="dropdown-item" href="/api/v1/admin/complaint/all">All complains</a></li>
+              <li><a class="dropdown-item" href="/api/v1/admin/complaint/indivisualComplain">Get a complain</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="postsDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">Posts</a>
+            <ul class="dropdown-menu" aria-labelledby="postsDropdown">
+              <li><a class="dropdown-item" href="/api/v1//allPost">View All Posts</a></li>
+              <li><a class="dropdown-item" href="/api/v1/post/create">Create New Post</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">Resources</a>
+            <ul class="dropdown-menu" aria-labelledby="resourcesDropdown">
+              <li><a class="dropdown-item" href="/api/v1/admin/resources">View All Resources</a></li>
+              <li><a class="dropdown-item" href="/api/v1/admin/resource/create">Create New Resource</a></li>
+            </ul>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="#">About Us</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Contact</a>
+          </li>
+        </ul>
+        
+        <!-- Updated Auth buttons section -->
+        <div class="navbar-nav auth-buttons">
+          <% if (locals.user) { %>
+            <!-- Show when user is logged in -->
+            <span class="welcome-text">Welcome, <%= user.username %></span>
+            <a class="nav-link logout" href="/auth/logout">Logout</a>
+          <% } else { %>
+            <!-- Show when user is NOT logged in -->
+            <a class="nav-link login" href="/auth/login">Login</a>
+            <a class="nav-link register" href="/auth/register">Register</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>Welcome to Mental Health Support</h1>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

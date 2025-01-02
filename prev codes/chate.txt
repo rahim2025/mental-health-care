@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="h-screen bg-gray-100">
+    <div class="container mx-auto h-full">
+        <div class="flex h-full min-h-screen">
+            <!-- Users List Sidebar -->
+            <div class="w-1/4 bg-white border-r">
+                <div class="p-4 bg-gray-800 text-white">
+                    <h2 class="text-xl font-bold">Users</h2>
+                </div>
+                <div id="usersList" class="overflow-y-auto h-[calc(100vh-4rem)]">
+                    <!-- Users will be populated here -->
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="w-3/4 flex flex-col">
+                <div id="chatHeader" class="p-4 bg-gray-800 text-white">
+                    <h2 class="text-xl font-bold">Chat</h2>
+                </div>
+                
+                <!-- Messages Container -->
+                <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 bg-gray-50">
+                    <div id="messages" class="space-y-4">
+                        <!-- Messages will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="p-4 bg-white border-t">
+                    <form id="messageForm" class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Type your message..."
+                        >
+                        <button 
+                            type="submit"
+                            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                            Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const currentUser = '<%= user._id %>'; // Get current user's ID from server
+        let selectedUser = null;
+        let users = {};
+
+        // Handle incoming messages
+        socket.on('chat message', function(data) {
+            if ((data.from === currentUser && data.to === selectedUser) ||
+                (data.from === selectedUser && data.to === currentUser)) {
+                appendMessage(data);
+            }
+        });
+
+        // Handle updated users list
+        socket.on('users update', function(updatedUsers) {
+            users = updatedUsers;
+            updateUsersList();
+        });
+
+        // Join chat as current user
+        socket.emit('join chat', { userId: currentUser });
+
+        function updateUsersList() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '';
+            
+            users.forEach(user => {
+                if (user.userId !== currentUser) {
+                    const userElement = document.createElement('div');
+                    userElement.className = `p-4 border-b hover:bg-gray-50 cursor-pointer ${
+                        selectedUser === user.userId ? 'bg-blue-50' : ''
+                    }`;
+                    userElement.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full ${
+                                user.online ? 'bg-green-500' : 'bg-gray-300'
+                            }"></div>
+                            <span>${user.username}</span>
+                        </div>
+                    `;
+                    userElement.onclick = () => selectUser(user.userId);
+                    usersList.appendChild(userElement);
+                }
+            });
+        }
+
+        function selectUser(userId) {
+            selectedUser = userId;
+            updateUsersList();
+            document.getElementById('messages').innerHTML = '';
+            loadChatHistory(userId);
+        }
+
+        function appendMessage(data) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            const isOwnMessage = data.from === currentUser;
+            
+            messageDiv.className = `flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`;
+            messageDiv.innerHTML = `
+                <div class="max-w-[70%] ${
+                    isOwnMessage ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                } rounded-lg px-4 py-2">
+                    ${data.message}
+                </div>
+            `;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function loadChatHistory(userId) {
+            fetch(`/api/chat/history/${userId}`)
+                .then(response => response.json())
+                .then(messages => {
+                    messages.forEach(message => appendMessage(message));
+                });
+        }
+
+        // Handle message form submission
+        document.getElementById('messageForm').onsubmit = function(e) {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message && selectedUser) {
+                socket.emit('chat message', {
+                    from: currentUser,
+                    to: selectedUser,
+                    message: message
+                });
+                
+                appendMessage({
+                    from: currentUser,
+                    message: message
+                });
+                
+                input.value = '';
+            }
+        };
+    </script>
+</body>
+</html>

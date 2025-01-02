@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Options</title>
+  <script src='/js/socket.io.js' defer></script>
+  <script src='/js/main.js' defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: url('images/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      filter: brightness(70%);
+      font-family: 'Arial', sans-serif;
+      color: #000;
+    }
+
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(5px);
+    }
+
+    .navbar-brand {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .nav-link {
+      color: #fff !important;
+      font-size: 0.9rem;
+    }
+
+    .nav-link:hover {
+      background-color: #1a73e8;
+      border-radius: 5px;
+    }
+
+    .premium-section {
+      padding: 50px 0;
+    }
+
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      background-color: #000;
+      color: #fff;
+      height: 250px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .card-text {
+      font-size: 1rem;
+    }
+
+    .btn-primary {
+      background-color: #1a73e8;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background-color: #155bb5;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Mental Health Support</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+        aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="#">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Features</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Pricing</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Contact</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Premium Options Section -->
+  <section class="premium-section text-center">
+    <div class="container">
+      <h1 class="mb-5">Choose Your Premium Plan</h1>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Basic Plan</h5>
+              <p class="card-text">Access to chat support and community features.</p>
+              <p class="card-text">Price: $10/month</p>
+              <a href="/paymentData" class="btn btn-primary">Select Basic</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Advanced Plan</h5>
+              <p class="card-text">Includes Basic features + session reminders.</p>
+              <p class="card-text">Price: $20/month</p>
+              <a href="#" class="btn btn-primary">Select Advanced</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Premium Plan</h5>
+              <p class="card-text">All features + phone support and session notes.</p>
+              <p class="card-text">Price: $30/month</p>
+              <a href="#" class="btn btn-primary">Select Premium</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
