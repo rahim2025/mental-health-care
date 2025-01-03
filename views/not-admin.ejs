@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Access Required</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .container h1 {
+            color: #dc3545;
+        }
+        .container p {
+            margin: 20px 0;
+        }
+        .container a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .container a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Access Denied</h1>
+        <p>You are not an admin. Please log in as an admin to access this page.</p>
+        <a href="/auth/login">Go to Login</a>
+    </div>
+</body>
+</html>

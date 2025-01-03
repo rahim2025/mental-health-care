@@ -16,6 +16,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    isAdmin: {
+        type: Boolean,
+        default: false
+    },
     socketId: { // Add socketId to the schema
         type: String,
         // required: true,  // You might not require it initially for all users

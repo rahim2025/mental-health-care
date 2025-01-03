@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const { Types } = require("mongoose");
 
 const Complaint = require("../models/complaint");
+const { checkAuth } = require('../middleware/auth');
 const Post = require("../models/post");
 const Comment = require("../models/comment");
 const User = require("../models/users");
@@ -10,21 +11,17 @@ const { route } = require("./indexRoutes");
 
 const router = express.Router();
 
-// no middleware has been used since i dont see any middleware
-// setting up authentication wasnt my job so i left it as is
-// in an ideal world, there should be an authenticator middleware
-// with 2 layers of authentication. they should decode the token
-// and put populate req.user or req.admin where relevant.
+
 
 // submit single complaints from user.
 // post/comment id should be sent in url query
 // i.e. "/complain/submit?postId=<sourcePostId>" or "/complain/submit?commentId=<sourceCommentId>"
-router.get("/complaint/submit", async (req, res) => {
+router.get("/complaint/submit",checkAuth, async (req, res) => {
   try {
       // Check if user is logged in via session
-      // if (!req.session.userId) {
-      //     return res.redirect('/auth/login');
-      // }
+      if (!req.user) {
+          return res.redirect('/auth/login');
+      }
 
       // Render the complaint submission form
       res.render('complaint-form', {
@@ -41,47 +38,59 @@ router.get("/complaint/submit", async (req, res) => {
   }
 });
 
-router.post("/complaint/submit", async (req, res) => {
-  const { postId, commentId } = req.query;
-
-  if (postId && !mongoose.isValidObjectId(postId)) {
-    return res.status(400).json({ message: 'Invalid post ID' });
-  }
-  if (commentId && !mongoose.isValidObjectId(commentId)) {
-    return res.status(400).json({ message: 'Invalid comment ID' });
-  }
-
-  // Proceed with database queries if IDs are valid
-  let source;
-  if (postId) {
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Source post not found" });
+router.post("/complaint/submit",checkAuth, async (req, res) => {
+  try{
+    // Check if user is logged in via session
+    if (!req.user) {
+      return res.redirect('/auth/login');
     }
-    source = { source: "post", sourcePostId: post._id, complaineeId: post.authorId };
-  } else if (commentId) {
-    const comment = await Comment.findById(commentId);
-    if (!comment) {
-      return res.status(404).json({ message: "Source comment not found" });
+    const { postId, commentId } = req.query;
+
+    if (postId && !mongoose.isValidObjectId(postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
     }
-    source = { source: "comment", sourceCommentId: comment._id, complaineeId: comment.authorId };
+    if (commentId && !mongoose.isValidObjectId(commentId)) {
+      return res.status(400).json({ message: 'Invalid comment ID' });
+    }
+  
+    // Proceed with database queries if IDs are valid
+    let source;
+    if (postId) {
+      const post = await Post.findById(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Source post not found" });
+      }
+      source = { source: "post", sourcePostId: post._id, complaineeId: post.authorId };
+    } else if (commentId) {
+      const comment = await Comment.findById(commentId);
+      if (!comment) {
+        return res.status(404).json({ message: "Source comment not found" });
+      }
+      source = { source: "comment", sourceCommentId: comment._id, complaineeId: comment.authorId };
+    }
+  
+    // Continue with complaint creation
+    const { complaintText } = req.body;
+    const { _id: complainerId } = req.user;
+    await Complaint.create({ complaintText, complainerId, ...source });
+  
+    res.json({ message: "success" });
+  } catch (error) {
+    console.error('Error submitting complaint:', error);
+    res.status(500).render('error', {
+        error: 'Failed to submit complaint'
+    });
   }
-
-  // Continue with complaint creation
-  const { complaintText } = req.body;
-  const { _id: complainerId } = req.user;
-  await Complaint.create({ complaintText, complainerId, ...source });
-
-  res.json({ message: "success" });
 });
+ 
 
 
 // see all complaints in admin
 // no pagination as of now
-router.get("/admin/complaint/all", async (req, res) => {
-  // if (!req.admin) {
-  //   return res.status(401).json({ message: "Unauthorized" });
-  // }
+router.get("/admin/complaint/all",checkAuth, async (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.render("not-admin");
+  }
 
   const complaints = await Complaint.find();
 
@@ -91,15 +100,18 @@ router.get("/admin/complaint/all", async (req, res) => {
 
 // get single complaint in admin
 // returns complaint with all sources included
-router.get("/admin/complaint/indivisualComplain", async (req, res) => {
+router.get("/admin/complaint/indivisualComplain",checkAuth, async (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.render("not-admin");
+  }
   res.render("indivisualComplain");
 });
 
 
-router.get("/admin/complaint/complaintId", async (req, res) => {
-  // if (!req.admin) {
-  //   return res.status(401).json({ message: "Unauthorized" });
-  // }
+router.get("/admin/complaint/complaintId",checkAuth, async (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.render("not-admin");
+  }
 
   const { complaintId } = req.query;
 
@@ -151,8 +163,8 @@ router.get("/admin/complaint/complaintId", async (req, res) => {
 
 // submit review on single complaint in admin
 router.put("/admin/complaint/:complaintId/review/submit", async (req, res) => {
-  if (!req.admin) {
-    return res.status(401).json({ message: "Unauthorized" });
+  if (!req.user.isAdmin) {
+    return res.render("not-admin");
   }
 
   const { complaintId } = req.params;

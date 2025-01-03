@@ -4,11 +4,11 @@ const Resource = require('../models/resource');
 const { checkAuth } = require('../middleware/auth');
 
 // GET - View all resources
-router.get("/admin/resources", async (req, res) => {
+router.get("/admin/resources",checkAuth, async (req, res) => {
   try {
-    // if (!req.admin) {             // Commented out to allow for testing without admin
-    //   return res.redirect('/admin/login');
-    // }
+    if (!req.user.isAdmin) {           
+      return res.render("not-admin");
+    }
 
     const resources = await Resource.find().populate('sourceAdminId', 'name email');
     res.render('resources', {
@@ -24,11 +24,10 @@ router.get("/admin/resources", async (req, res) => {
 
 // GET - Create resource form
 router.get("/admin/resource/create",checkAuth, async (req, res) => {
-  console.log('req.admin:', req.admin);
   try {
-    // if (!req.admin) {            // Commented out to allow for testing without admin
-    //   return res.redirect('/admin/login');
-    // }
+    if (!req.user.isAdmin) {            
+      return res.render("not-admin");
+    }
     res.render('create-resource', {
       title: 'Create Resource',
       error: null
@@ -41,11 +40,10 @@ router.get("/admin/resource/create",checkAuth, async (req, res) => {
 
 // POST - Create new resource
 router.post("/admin/resource/create",checkAuth, async (req, res) => {
-  console.log('req.admin:', req.user);
   try {
-    // if (!req.admin) {           // Commented out to allow for testing without admin
-    //   return res.status(401).json({ message: "Unauthorized" });
-    // }
+    if (!req.user.isAdmin) {           
+      return res.render("not-admin");
+    }
 
     const { resourceContext, resourceUrl } = req.body;
     const resource = await Resource.create({
@@ -67,9 +65,9 @@ router.post("/admin/resource/create",checkAuth, async (req, res) => {
 // GET - Edit resource form
 router.get("/admin/resource/:resourceId/edit",checkAuth, async (req, res) => {
   try {
-    // if (!req.admin) {        // Commented out to allow for testing without admin
-    //   return res.redirect('/admin/login');
-    // }
+    if (!req.isAdmin) {        
+      return res.render("not-admin");
+    }
 
     const { resourceId } = req.params;
     const resource = await Resource.findById(resourceId);
@@ -89,11 +87,11 @@ router.get("/admin/resource/:resourceId/edit",checkAuth, async (req, res) => {
 });
 
 // PUT - Edit single resource
-router.put("/admin/resource/:resourceId/edit", async (req, res) => {
+router.put("/admin/resource/:resourceId/edit", checkAuth,async (req, res) => {
   try {
-    // if (!req.admin) {     // Commented out to allow for testing without admin
-    //   return res.status(401).json({ message: "Unauthorized" });
-    // }
+    if (!req.user.isAdmin) {     // Commented out to allow for testing without admin
+      return res.render("not-admin");
+    }
 
     const { resourceId } = req.params;
     const { resourceContext, resourceUrl } = req.body;
