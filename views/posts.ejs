@@ -59,7 +59,7 @@
             <% posts.forEach(post => { %>
                 <div class="post">
                     <h2><%= post.title %></h2>
-                    <p><%= post.content %></p>
+                    <p><%= post.text %></p>
                     <p>By: <%= post.authorId.name %> (<%= post.authorId.email %>)</p>
                     <% if (currentUser && currentUser._id.toString() === post.authorId._id.toString()) { %>
                         <form action="/api/v1/post/<%= post._id %>/update?_method=PUT" method="POST"></form>

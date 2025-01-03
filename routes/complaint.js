@@ -38,47 +38,50 @@ router.get("/complaint/submit",checkAuth, async (req, res) => {
   }
 });
 
-router.post("/complaint/submit",checkAuth, async (req, res) => {
-  try{
+router.post("/complaint/submit", checkAuth, async (req, res) => {
+  try {
     // Check if user is logged in via session
     if (!req.user) {
       return res.redirect('/auth/login');
     }
-    const { postId, commentId } = req.query;
 
-    if (postId && !mongoose.isValidObjectId(postId)) {
+    const { complainerId, complaineeId, source, sourcePostId, sourceCommentId, complaintText } = req.body;
+
+    // Validate IDs
+    if (!mongoose.isValidObjectId(complainerId) || !mongoose.isValidObjectId(complaineeId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+    if (source === 'post' && sourcePostId && !mongoose.isValidObjectId(sourcePostId)) {
       return res.status(400).json({ message: 'Invalid post ID' });
     }
-    if (commentId && !mongoose.isValidObjectId(commentId)) {
+    if (source === 'comment' && sourceCommentId && !mongoose.isValidObjectId(sourceCommentId)) {
       return res.status(400).json({ message: 'Invalid comment ID' });
     }
-  
+
     // Proceed with database queries if IDs are valid
-    let source;
-    if (postId) {
-      const post = await Post.findById(postId);
+    let sourceData;
+    if (source === 'post') {
+      const post = await Post.findById(sourcePostId);
       if (!post) {
         return res.status(404).json({ message: "Source post not found" });
       }
-      source = { source: "post", sourcePostId: post._id, complaineeId: post.authorId };
-    } else if (commentId) {
-      const comment = await Comment.findById(commentId);
+      sourceData = { source: "post", sourcePostId: post._id, complaineeId: post.authorId };
+    } else if (source === 'comment') {
+      const comment = await Comment.findById(sourceCommentId);
       if (!comment) {
         return res.status(404).json({ message: "Source comment not found" });
       }
-      source = { source: "comment", sourceCommentId: comment._id, complaineeId: comment.authorId };
+      sourceData = { source: "comment", sourceCommentId: comment._id, complaineeId: comment.authorId };
     }
-  
+
     // Continue with complaint creation
-    const { complaintText } = req.body;
-    const { _id: complainerId } = req.user;
-    await Complaint.create({ complaintText, complainerId, ...source });
-  
+    await Complaint.create({ complaintText, complainerId, ...sourceData });
+
     res.json({ message: "success" });
   } catch (error) {
     console.error('Error submitting complaint:', error);
     res.status(500).render('error', {
-        error: 'Failed to submit complaint'
+      error: 'Failed to submit complaint'
     });
   }
 });

@@ -93,46 +93,75 @@
     <h1>Submit a Complaint</h1>
 
     <!-- Display user status -->
-      <form id="complaintForm">
-        <div class="form-group">
-          <label for="sourceType">Source Type:</label>
-          <select id="sourceType" name="sourceType" required>
-            <option value="" disabled selected>Select Source</option>
-            <option value="post">Post</option>
-            <option value="comment">Comment</option>
-          </select>
-        </div>
+    <form id="complaintForm">
+      <div class="form-group">
+        <label for="complainerId">Your User ID:</label>
+        <input type="text" id="complainerId" name="complainerId" placeholder="Enter your User ID" required>
+      </div>
 
-        <div class="form-group">
-          <label for="sourceId">Source ID (Post/Comment ID):</label>
-          <input type="text" id="sourceId" name="sourceId" placeholder="Enter Post or Comment ID" required>
-        </div>
+      <div class="form-group">
+        <label for="complaineeId">Complainee User ID:</label>
+        <input type="text" id="complaineeId" name="complaineeId" placeholder="Enter the Complainee's User ID" required>
+      </div>
 
-        <div class="form-group">
-          <label for="complaintText">Complaint Text:</label>
-          <textarea id="complaintText" name="complaintText" rows="4" placeholder="Write your complaint here..." required></textarea>
-        </div>
+      <div class="form-group">
+        <label for="source">Source Type:</label>
+        <select id="source" name="source" required>
+          <option value="" disabled selected>Select Source</option>
+          <option value="post">Post</option>
+          <option value="comment">Comment</option>
+        </select>
+      </div>
 
-        <button type="button" class="btn btn-primary" onclick="submitComplaint()">Submit Complaint</button>
-      </form>
+      <div class="form-group" id="sourcePostIdGroup" style="display: none;">
+        <label for="sourcePostId">Source Post ID:</label>
+        <input type="text" id="sourcePostId" name="sourcePostId" placeholder="Enter Post ID">
+      </div>
 
+      <div class="form-group" id="sourceCommentIdGroup" style="display: none;">
+        <label for="sourceCommentId">Source Comment ID:</label>
+        <input type="text" id="sourceCommentId" name="sourceCommentId" placeholder="Enter Comment ID">
+      </div>
+
+      <div class="form-group">
+        <label for="complaintText">Complaint Text:</label>
+        <textarea id="complaintText" name="complaintText" rows="4" placeholder="Write your complaint here..." required></textarea>
+      </div>
+
+      <button type="button" class="btn btn-primary" onclick="submitComplaint()">Submit Complaint</button>
+    </form>
   </div>
 
   <script>
+    document.getElementById('source').addEventListener('change', function() {
+      const sourceType = this.value;
+      document.getElementById('sourcePostIdGroup').style.display = sourceType === 'post' ? 'block' : 'none';
+      document.getElementById('sourceCommentIdGroup').style.display = sourceType === 'comment' ? 'block' : 'none';
+    });
+
     function submitComplaint() {
-      const sourceType = document.getElementById('sourceType').value;
-      const sourceId = document.getElementById('sourceId').value;
+      const complainerId = document.getElementById('complainerId').value;
+      const complaineeId = document.getElementById('complaineeId').value;
+      const source = document.getElementById('source').value;
+      const sourcePostId = document.getElementById('sourcePostId').value;
+      const sourceCommentId = document.getElementById('sourceCommentId').value;
       const complaintText = document.getElementById('complaintText').value;
 
-      if (!sourceType || !sourceId || !complaintText) {
+      if (!complainerId || !complaineeId || !source || !complaintText) {
         alert('All fields are required.');
         return;
       }
 
-      const queryParam = sourceType === 'post' ? `postId=${sourceId}` : `commentId=${sourceId}`;
-      const formData = { complaintText };
+      const formData = {
+        complainerId,
+        complaineeId,
+        source,
+        complaintText,
+        sourcePostId: source === 'post' ? sourcePostId : undefined,
+        sourceCommentId: source === 'comment' ? sourceCommentId : undefined
+      };
 
-      fetch(`/api/v1/complaint/submit?${queryParam}`, {
+      fetch('/api/v1/complaint/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
